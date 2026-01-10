@@ -1,4 +1,4 @@
-﻿import { normalizeSiteUrl } from "./editor-helpers.js";
+import { normalizeSiteUrl } from "./editor-helpers.js";
 
 export const injectEditorStyles = (doc) => {
   const style = doc.createElement("style");
@@ -48,9 +48,62 @@ const decorateEditorLinks = (doc, baseUrl) => {
   });
 };
 
+const isValidTextNode = (node) => {
+  if (!node || node.nodeType !== Node.TEXT_NODE) {
+    return false;
+  }
+  if (!node.nodeValue || !node.nodeValue.trim()) {
+    return false;
+  }
+  const parent = node.parentElement;
+  if (!parent) {
+    return false;
+  }
+  if (parent.isContentEditable) {
+    return false;
+  }
+  if (parent.closest("[data-cms-ignore]")) {
+    return false;
+  }
+  if (parent.closest("[data-editor-text]")) {
+    return false;
+  }
+  const tag = parent.tagName;
+  if (["SCRIPT", "STYLE", "NOSCRIPT", "SVG", "PATH", "HEAD", "HTML", "BODY", "META", "LINK", "TITLE"].includes(tag)) {
+    return false;
+  }
+  if (["INPUT", "SELECT", "TEXTAREA", "OPTION"].includes(tag)) {
+    return false;
+  }
+  return true;
+};
+
+const wrapEditableTextNodes = (doc) => {
+  if (!doc?.body) {
+    return;
+  }
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (isValidTextNode(node)) {
+      textNodes.push(node);
+    }
+  }
+  textNodes.forEach((node) => {
+    const span = doc.createElement("span");
+    span.dataset.editorText = "true";
+    span.textContent = node.nodeValue;
+    node.parentElement.replaceChild(span, node);
+  });
+};
+
 export const isEditableElement = (element) => {
   if (!element || element.nodeType !== 1) {
     return false;
+  }
+  if (element.dataset?.editorText === "true") {
+    return true;
   }
   const tag = element.tagName;
   if (["SCRIPT", "STYLE", "NOSCRIPT", "SVG", "PATH", "HEAD", "HTML", "BODY", "META", "LINK"].includes(tag)) {
@@ -70,16 +123,27 @@ export const isEditableElement = (element) => {
 export const getPreviewDoc = (previewFrame) => previewFrame.contentDocument;
 
 export const clearActiveSelection = (state, doc) => {
+  if (!doc) {
+    state.currentEditable = null;
+    return;
+  }
   const active = state.currentEditable;
   if (active) {
     active.contentEditable = "false";
     delete active.dataset.editorHighlight;
     delete active.dataset.editorEditing;
   }
-  doc.querySelectorAll("[data-editor-highlight=\"true\"]").forEach((node) => {
-    node.dataset.editorHighlight = "false";
-    node.dataset.editorEditing = "false";
+  doc.querySelectorAll("[data-editor-text][contenteditable=\"true\"]").forEach((node) => {
+    node.contentEditable = "false";
   });
+  doc.querySelectorAll("[data-editor-highlight], [data-editor-editing]").forEach((node) => {
+    delete node.dataset.editorHighlight;
+    delete node.dataset.editorEditing;
+  });
+  const selection = doc.getSelection?.();
+  if (selection) {
+    selection.removeAllRanges();
+  }
   state.currentEditable = null;
 };
 
@@ -100,6 +164,7 @@ export const enableEditing = (state, previewFrame, registerChange) => {
     return;
   }
   state.previewDoc = doc;
+  wrapEditableTextNodes(doc);
   doc.addEventListener("click", (event) => {
     const target = event.target;
     if (target.closest("a")) {
@@ -111,10 +176,7 @@ export const enableEditing = (state, previewFrame, registerChange) => {
     if (!state.editingEnabled) {
       return;
     }
-    if (target.closest("button, input, select, textarea, label")) {
-      return;
-    }
-    let candidate = target;
+    let candidate = target.closest("[data-editor-text]") || target;
     while (candidate && !isEditableElement(candidate) && candidate !== doc.body) {
       candidate = candidate.parentElement;
     }
