@@ -41,6 +41,9 @@ const main = document.querySelector(".main");
 const viewEditorBtn = document.getElementById("viewEditorBtn");
 const viewConsultationsBtn = document.getElementById("viewConsultationsBtn");
 
+// Set the single allowed access key for opening the editor.
+const REQUIRED_API_KEY = "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";
+
 const DRAFT_STORAGE_KEY = "editorChangeDraft";
 
 let consultationsPage = null;
@@ -270,6 +273,10 @@ connectBtn.addEventListener("click", async () => {
   }
   if (!tokenInput.value.trim()) {
     setStatus("Paste a GitHub token.", "is-bad");
+    return;
+  }
+  if (REQUIRED_API_KEY && tokenInput.value.trim() !== REQUIRED_API_KEY) {
+    setStatus("Invalid access key.", "is-bad");
     return;
   }
   state.owner = repoInfo.owner;
