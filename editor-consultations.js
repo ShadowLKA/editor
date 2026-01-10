@@ -98,7 +98,11 @@ export const initConsultationsPage = ({ state }) => {
             ${messageText ? `<div class="consult-admin-message">${messageText}</div>` : ""}
             ${records ? `<div class="consult-admin-records"><strong>Records:</strong> ${records}</div>` : ""}
             <div class="consult-admin-actions">
-              <button class="btn ghost consult-admin-action" type="button" data-action="reject">Reject</button>
+              ${
+                isRejected
+                  ? ""
+                  : '<button class="btn ghost consult-admin-action" type="button" data-action="reject">Reject</button>'
+              }
               <button class="btn ghost consult-admin-action" type="button" data-action="delete">Delete</button>
             </div>
           </div>
@@ -153,7 +157,7 @@ export const initConsultationsPage = ({ state }) => {
         return;
       }
 
-      const confirmDialog = (title, body) =>
+      const confirmDialog = (title, body, confirmLabel) =>
         new Promise((resolve) => {
           const modal = document.getElementById("confirmModal");
           const titleEl = document.getElementById("confirmTitle");
@@ -168,6 +172,7 @@ export const initConsultationsPage = ({ state }) => {
 
           titleEl.textContent = title;
           bodyEl.textContent = body;
+          confirmBtn.textContent = confirmLabel || "Confirm";
           modal.classList.add("is-visible");
           modal.setAttribute("aria-hidden", "false");
 
@@ -203,7 +208,8 @@ export const initConsultationsPage = ({ state }) => {
       if (button.dataset.action === "delete") {
         const confirmed = await confirmDialog(
           "Delete consultation request?",
-          "This action cannot be undone."
+          "This action cannot be undone.",
+          "Delete"
         );
         if (!confirmed) {
           return;
@@ -220,7 +226,8 @@ export const initConsultationsPage = ({ state }) => {
       if (button.dataset.action === "reject") {
         const confirmed = await confirmDialog(
           "Reject consultation request?",
-          "This will mark the request as rejected."
+          "This will mark the request as rejected.",
+          "Reject"
         );
         if (!confirmed) {
           return;
@@ -240,3 +247,4 @@ export const initConsultationsPage = ({ state }) => {
 
   return { load };
 };
+
