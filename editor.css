@@ -665,6 +665,15 @@ h3 {
   color: var(--accent);
 }
 
+.consult-admin-status.is-rejected {
+  color: #b34120;
+}
+
+.consult-admin-item.is-rejected {
+  border-color: rgba(179, 65, 32, 0.35);
+  background: #fff2ed;
+}
+
 .consult-admin-id {
   font-family: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
   font-size: 0.72rem;
