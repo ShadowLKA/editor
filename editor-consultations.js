@@ -61,9 +61,10 @@ export const initConsultationsPage = ({ state }) => {
         const status = row.status || "new";
         const source = row.source || "web";
         const id = row.id || "";
+        const isRejected = status === "rejected";
 
         return `
-          <div class="consult-admin-item" data-consult-id="${id}">
+          <div class="consult-admin-item${isRejected ? " is-rejected" : ""}" data-consult-id="${id}">
             <div class="consult-admin-head">
               <strong>${name}</strong>
               <span class="consult-admin-date">${createdAt}</span>
@@ -83,7 +84,7 @@ export const initConsultationsPage = ({ state }) => {
               </div>
               <div>
                 <span class="consult-admin-label">Status</span>
-                <span class="consult-admin-status">${status}</span>
+                <span class="consult-admin-status${isRejected ? " is-rejected" : ""}">${status}</span>
               </div>
               <div>
                 <span class="consult-admin-label">Source</span>
