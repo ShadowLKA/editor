@@ -42,7 +42,7 @@ const viewEditorBtn = document.getElementById("viewEditorBtn");
 const viewConsultationsBtn = document.getElementById("viewConsultationsBtn");
 
 // Leave empty to allow any valid PAT.
-const REQUIRED_API_KEY = "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";
+const REQUIRED_API_KEY = "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";
 
 const DRAFT_STORAGE_KEY = "editorChangeDraft";
 
