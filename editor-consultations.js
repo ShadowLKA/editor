@@ -9,6 +9,14 @@ const setMessage = (el, text, type = "") => {
   el.classList.toggle("is-error", type === "error");
 };
 
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 const formatDate = (value) => {
   if (!value) {
     return "Unknown date";
@@ -64,39 +72,39 @@ export const initConsultationsPage = ({ state }) => {
         const isRejected = String(status).toLowerCase() === "rejected";
 
         return `
-          <div class="consult-admin-item${isRejected ? " is-rejected" : ""}" data-consult-id="${id}">
+          <div class="consult-admin-item${isRejected ? " is-rejected" : ""}" data-consult-id="${escapeHtml(id)}">
             <div class="consult-admin-head">
-              <strong>${name}</strong>
-              <span class="consult-admin-date">${createdAt}</span>
+              <strong>${escapeHtml(name)}</strong>
+              <span class="consult-admin-date">${escapeHtml(createdAt)}</span>
             </div>
             <div class="consult-admin-grid">
               <div>
                 <span class="consult-admin-label">Contact</span>
-                <span>${contactLine || "Not provided"}</span>
+                <span>${escapeHtml(contactLine || "Not provided")}</span>
               </div>
               <div>
                 <span class="consult-admin-label">Preferred</span>
-                <span>${preferred || "Not set"}</span>
+                <span>${escapeHtml(preferred || "Not set")}</span>
               </div>
               <div>
                 <span class="consult-admin-label">Specialty</span>
-                <span>${specialty || "Not set"}</span>
+                <span>${escapeHtml(specialty || "Not set")}</span>
               </div>
               <div>
                 <span class="consult-admin-label">Status</span>
-                <span class="consult-admin-status${isRejected ? " is-rejected" : ""}">${status}</span>
+                <span class="consult-admin-status${isRejected ? " is-rejected" : ""}">${escapeHtml(status)}</span>
               </div>
               <div>
                 <span class="consult-admin-label">Source</span>
-                <span>${source}</span>
+                <span>${escapeHtml(source)}</span>
               </div>
               <div>
                 <span class="consult-admin-label">Request ID</span>
-                <span class="consult-admin-id">${id || "-"}</span>
+                <span class="consult-admin-id">${escapeHtml(id || "-")}</span>
               </div>
             </div>
-            ${messageText ? `<div class="consult-admin-message">${messageText}</div>` : ""}
-            ${records ? `<div class="consult-admin-records"><strong>Records:</strong> ${records}</div>` : ""}
+            ${messageText ? `<div class="consult-admin-message">${escapeHtml(messageText)}</div>` : ""}
+            ${records ? `<div class="consult-admin-records"><strong>Records:</strong> ${escapeHtml(records)}</div>` : ""}
             <div class="consult-admin-actions">
               ${
                 isRejected
