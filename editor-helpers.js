@@ -28,7 +28,8 @@ export const apiFetch = async (state, path, options = {}) => {
     ...options,
     headers: {
       Accept: "application/vnd.github+json",
-      Authorization: `token ${state.token}`,
+      Authorization: `Bearer ${state.token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
       ...options.headers
     }
   });
@@ -43,7 +44,11 @@ export const apiFetch = async (state, path, options = {}) => {
     } catch (_error) {
       // Keep raw text for non-JSON error bodies.
     }
-    const error = new Error(message || `Request failed: ${response.status}`);
+    let finalMessage = message || `Request failed: ${response.status}`;
+    if (response.status === 401 && /bad credentials/i.test(finalMessage)) {
+      finalMessage = "Bad credentials. Verify the PAT is correct, not revoked, and authorized for SSO if required.";
+    }
+    const error = new Error(finalMessage);
     error.status = response.status;
     error.body = text;
     throw error;
