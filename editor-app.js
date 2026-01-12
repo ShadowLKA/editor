@@ -126,9 +126,15 @@ const renderChanges = () => {
     const item = document.createElement("div");
     item.className = "change-item";
     const orig = document.createElement("div");
-    orig.innerHTML = `<strong>Original</strong>${original}`;
+    const origLabel = document.createElement("strong");
+    origLabel.textContent = "Original";
+    orig.appendChild(origLabel);
+    orig.appendChild(document.createTextNode(` ${original}`));
     const next = document.createElement("div");
-    next.innerHTML = `<strong>Updated</strong>${updated}`;
+    const nextLabel = document.createElement("strong");
+    nextLabel.textContent = "Updated";
+    next.appendChild(nextLabel);
+    next.appendChild(document.createTextNode(` ${updated}`));
     item.appendChild(orig);
     item.appendChild(next);
     changesList.appendChild(item);
@@ -206,9 +212,9 @@ const pushTextEdits = async () => {
     setStatus("No edits to push.", "is-bad");
     return;
   }
-  setStatus("Applying edits to copy files...");
+  setStatus("Preparing edits...");
   const usageTotals = new Map();
-  let updatedFiles = 0;
+  const updates = [];
 
   for (const path of DEFAULT_COPY_FILES) {
     try {
@@ -224,17 +230,7 @@ const pushTextEdits = async () => {
       if (result.updated === originalContent) {
         continue;
       }
-      const payload = {
-        message: messageInput.value.trim() || "Update content via editor",
-        content: encodeBase64(result.updated),
-        sha: data.sha,
-        branch: state.branch
-      };
-      await apiFetch(state, `/repos/${state.owner}/${state.repo}/contents/${path}`, {
-        method: "PUT",
-        body: JSON.stringify(payload)
-      });
-      updatedFiles += 1;
+      updates.push({ path, content: result.updated });
     } catch (error) {
       setStatus(`Failed updating ${path}.`, "is-bad");
       return;
@@ -248,7 +244,7 @@ const pushTextEdits = async () => {
     }
   });
 
-  if (!updatedFiles) {
+  if (!updates.length) {
     setStatus("No files changed. Edits might not match source text.", "is-bad");
     return;
   }
@@ -256,7 +252,64 @@ const pushTextEdits = async () => {
     setStatus("Some edits did not match source text. Check the list.", "is-bad");
     return;
   }
-  setStatus(`Pushed edits to ${updatedFiles} file(s).`, "is-good");
+
+  try {
+    setStatus("Creating commit...");
+    const ref = await apiFetch(
+      state,
+      `/repos/${state.owner}/${state.repo}/git/ref/heads/${state.branch}`
+    );
+    const baseCommitSha = ref.object.sha;
+    const baseCommit = await apiFetch(
+      state,
+      `/repos/${state.owner}/${state.repo}/git/commits/${baseCommitSha}`
+    );
+    const baseTreeSha = baseCommit.tree.sha;
+
+    const treeItems = [];
+    for (const update of updates) {
+      const blob = await apiFetch(state, `/repos/${state.owner}/${state.repo}/git/blobs`, {
+        method: "POST",
+        body: JSON.stringify({
+          content: update.content,
+          encoding: "utf-8"
+        })
+      });
+      treeItems.push({
+        path: update.path,
+        mode: "100644",
+        type: "blob",
+        sha: blob.sha
+      });
+    }
+
+    const newTree = await apiFetch(state, `/repos/${state.owner}/${state.repo}/git/trees`, {
+      method: "POST",
+      body: JSON.stringify({
+        base_tree: baseTreeSha,
+        tree: treeItems
+      })
+    });
+
+    const commitMessage = messageInput.value.trim() || "Update content via editor";
+    const newCommit = await apiFetch(state, `/repos/${state.owner}/${state.repo}/git/commits`, {
+      method: "POST",
+      body: JSON.stringify({
+        message: commitMessage,
+        tree: newTree.sha,
+        parents: [baseCommitSha]
+      })
+    });
+
+    await apiFetch(state, `/repos/${state.owner}/${state.repo}/git/refs/heads/${state.branch}`, {
+      method: "PATCH",
+      body: JSON.stringify({ sha: newCommit.sha })
+    });
+
+    setStatus(`Pushed ${updates.length} file(s) in one commit.`, "is-good");
+  } catch (error) {
+    setStatus(error.message || "Failed to push edits.", "is-bad");
+  }
 };
 
 const clearEdits = () => {
@@ -355,6 +408,4 @@ consultationsPage = initConsultationsPage({ state });
 if (localStorage.getItem(DRAFT_STORAGE_KEY)) {
   loadDraft();
 }
-
-
 
