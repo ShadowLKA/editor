@@ -41,8 +41,8 @@ const main = document.querySelector(".main");
 const viewEditorBtn = document.getElementById("viewEditorBtn");
 const viewConsultationsBtn = document.getElementById("viewConsultationsBtn");
 
-// Set the single allowed access key for opening the editor.
-const REQUIRED_API_KEY = "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";
+// Leave empty to allow any valid PAT.
+const REQUIRED_API_KEY = "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";
 
 const DRAFT_STORAGE_KEY = "editorChangeDraft";
 
@@ -344,6 +344,7 @@ connectBtn.addEventListener("click", async () => {
 
   setStatus("Connecting...");
   try {
+    await apiFetch(state, "/user");
     setConnected(true);
     await loadSitePreview({
       state,
@@ -361,7 +362,7 @@ connectBtn.addEventListener("click", async () => {
   } catch (error) {
 
     setConnected(false);
-    setStatus(error.message || "Failed to connect.", "is-bad");
+    setStatus(`Token validation failed: ${error.message || "Failed to connect."}`, "is-bad");
   }
 });
 
