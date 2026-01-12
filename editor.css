@@ -256,6 +256,40 @@ h3 {
   font-size: 0.85rem;
 }
 
+.admin-group {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-group h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.service-admin-slot {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.service-admin-slot img {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+.service-admin-placeholder {
+  padding: 18px;
+  border-radius: 8px;
+  background: #f1f3f5;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .consult-admin-list {
   display: grid;
   gap: 10px;
